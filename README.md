@@ -1,41 +1,42 @@
 # DistributedColony
-A colony of life, running as a distributed system
 
-## Building and Running
+DistributedColony is a C++ project that simulates a distributed system, inspired by the concept of a 'colony of life.' It consists of two main components:
+- **Backend (BE):** Acts as the server, listening for and handling requests.
+- **Frontend (FO):** Acts as the client, connecting to the backend.
 
-### Prerequisites
-- You need a C++ compiler (e.g., g++) installed on your system.
+The backend and frontend communicate over TCP sockets using Protocol Buffers (protobuf) for efficient, structured messaging. The project is designed for extensibility, starting with a simple ping API and ready for more complex distributed interactions.
 
-### Compile
+## Quick Start (macOS)
 
-To compile the backend and frontend (binaries will be placed in the bin directory):
+1. **Setup and install all dependencies:**
+   ```sh
+   ./setup_mac.sh
+   ```
+   This will install Homebrew (if needed), all required packages, configure CMake, and build the project.
 
-```sh
-# Make sure bin directory exists
-mkdir -p bin
+2. **To rebuild the project after making changes:**
+   ```sh
+   ./build.sh
+   ```
 
-# Compile backend
-cd backend
-g++ -o ../bin/backend main.cpp
-cd ..
-
-# Compile frontend
-cd frontend
-g++ -o ../bin/frontend main.cpp
-cd ..
-```
+Binaries will be located in `build/bin/`.
 
 ### Run
 
-First, run the backend in one terminal:
-
+In one terminal, start the backend:
 ```sh
-./bin/backend
+cd build/bin
+./backend
 ```
 
-Then, in another terminal, run the frontend:
-
+In another terminal, start the frontend:
 ```sh
-./bin/frontend
+cd build/bin
+./frontend
 ```
 
+Or just run this command:
+```
+./build.sh && build/bin/backend & build/bin/frontend
+pkill -f build/bin/backend # to kill the backend
+```

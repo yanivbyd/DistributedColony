@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package distributedcolony;
+
+message PingRequest {
+    string client_id = 1;
+}
+
+message PingResponse {
+    string status = 1;
+} 
