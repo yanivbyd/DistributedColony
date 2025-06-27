@@ -61,4 +61,48 @@ void ColonyBackend::fill_image(GetImageResponse &response, int offsetX, int offs
         }
     }
     response.set_rgbbytes(reinterpret_cast<const char*>(rgb.data()), rgb.size());
+}
+
+Cell ColonyBackend::pick_random_color() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(0, 255);
+    Cell c;
+    c.red = dist(gen);
+    c.green = dist(gen);
+    c.blue = dist(gen);
+    c.extra = 0;
+    return c;
+}
+
+int ColonyBackend::random_distance(int max_dist) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(1, max_dist);
+    return dist(gen);
+}
+
+Cell* ColonyBackend::cell_at_pos(int x, int y) {
+    if (x < 0 || y < 0 || x >= matrix_width || y >= matrix_height) return nullptr;
+    return &matrix[y * matrix_width + x];
+}
+
+void ColonyBackend::blast(int x, int y) {
+    Cell color = pick_random_color();
+    Cell *center = cell_at_pos(x, y);
+    if (!center) return;
+    center->apply_color(color);
+    int distance = random_distance(12); // distance is between 1 and 50
+    for (int dy = -distance; dy <= distance; ++dy) {
+        for (int dx = -distance; dx <= distance; ++dx) {
+            int nx = x + dx;
+            int ny = y + dy;
+            Cell *cell = cell_at_pos(nx, ny);
+            if (!cell) continue;
+            float dist = std::sqrt(dx*dx + dy*dy);
+            if (dist == 0 || dist > distance) continue;
+            float factor = 1.0f / dist;
+            cell->apply_color(color, factor);
+        }
+    }
 } 

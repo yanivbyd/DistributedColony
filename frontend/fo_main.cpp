@@ -19,6 +19,8 @@ using distributedcolony::InitColonyRequest;
 using distributedcolony::InitColonyResponse;
 using distributedcolony::GetImageRequest;
 using distributedcolony::GetImageResponse;
+using distributedcolony::BlastRequest;
+using distributedcolony::BlastResponse;
 
 void print(const std::string& msg) {
     std::cout << "[FO] " << msg << std::endl;
@@ -188,6 +190,37 @@ void get_image(int sock, int offsetX, int offsetY, int width, int height) {
     }
 }
 
+void blast(int sock, int x, int y) {
+    BlastRequest request;
+    request.set_x(x);
+    request.set_y(y);
+    std::string out;
+    request.SerializeToString(&out);
+    const uint32_t func_code = htonl(static_cast<uint32_t>(BackendAPIFunctionCode::BLAST));
+    const uint32_t msg_len = htonl(static_cast<uint32_t>(out.size()));
+    send(sock, &func_code, sizeof(func_code), 0);
+    send(sock, &msg_len, sizeof(msg_len), 0);
+    send(sock, out.data(), out.size(), 0);
+
+    // Receive response
+    uint32_t resp_func_code, resp_msg_len;
+    if (!read_func_code_and_length(sock, resp_func_code, resp_msg_len)) {
+        throw std::runtime_error("Failed to read Blast response function code or length");
+    }
+    if (resp_func_code != static_cast<uint32_t>(BackendAPIFunctionCode::BLAST)) {
+        throw std::runtime_error("Unexpected function code in Blast response");
+    }
+    std::vector<char> buffer(resp_msg_len);
+    if (read_n_bytes_from_socket(sock, buffer.data(), resp_msg_len) != static_cast<ssize_t>(resp_msg_len)) {
+        throw std::runtime_error("Failed to read Blast response message");
+    }
+    BlastResponse response;
+    if (!response.ParseFromArray(buffer.data(), resp_msg_len)) {
+        throw std::runtime_error("Failed to parse BlastResponse");
+    }
+    print("Blast response status = " + std::to_string(response.status()));
+}
+
 int main() {
     const int sock = create_and_connect_socket("127.0.0.1", BE_API_PORT);
     if (sock < 0) {
@@ -195,6 +228,7 @@ int main() {
     }
     ping_backend(sock);
     init_colony(sock, COLONY_WIDTH, COLONY_HEIGHT);
+    blast(sock, 10, 10);
     get_image(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT);
     print("Closing connection");
     close(sock);

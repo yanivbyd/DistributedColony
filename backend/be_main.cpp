@@ -12,6 +12,8 @@ using distributedcolony::InitColonyRequest;
 using distributedcolony::InitColonyResponse;
 using distributedcolony::GetImageRequest;
 using distributedcolony::GetImageResponse;
+using distributedcolony::BlastRequest;
+using distributedcolony::BlastResponse;
 
 void print(const std::string& msg) {
     std::cout << "[BE] " << msg << std::endl;
@@ -105,6 +107,21 @@ void handle_client_requests(const int client_socket) {
                     send(client_socket, out.data(), out.size(), 0);
                 } else {
                     print("Failed to parse GetImageRequest");
+                }
+                break;
+            }
+            case BLAST: {
+                BlastRequest request;
+                if (request.ParseFromArray(buffer.data(), msg_len)) {
+                    BlastResponse response;
+                    ColonyBackend::instance().blast(request.x(), request.y());
+                    response.set_status(0);
+                    std::string out;
+                    response.SerializeToString(&out);
+                    write_func_code_and_length(client_socket, static_cast<uint32_t>(BLAST), out.size());
+                    send(client_socket, out.data(), out.size(), 0);
+                } else {
+                    print("Failed to parse BlastRequest");
                 }
                 break;
             }

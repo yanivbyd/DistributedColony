@@ -35,3 +35,13 @@ message GetImageResponse {
     int32 height = 3;
     bytes rgbBytes = 4; // row-major, 3 bytes per pixel (RGB)
 } 
+
+// Blast
+message BlastRequest {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message BlastResponse {
+    int32 status = 1;
+} 
