@@ -4,6 +4,13 @@
 #include <unistd.h>
 #include <cstring>
 #include "../be_api/be_api_common.h"
+#include "../build/be_api/ping.pb.h"
+
+using enum BackendAPIFunctionCode;
+
+void print(const std::string& msg) {
+    std::cout << "[BE] " << msg << std::endl;
+}
 
 int create_listening_socket(int port) {
     int server_fd;
@@ -17,7 +24,6 @@ int create_listening_socket(int port) {
         exit(EXIT_FAILURE);
     }
 
-    // Set SO_REUSEADDR
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
         perror("setsockopt SO_REUSEADDR");
         exit(EXIT_FAILURE);
@@ -39,6 +45,41 @@ int create_listening_socket(int port) {
     return server_fd;
 }
 
+void handle_client_requests(const int client_socket) {
+    while (true) {
+        uint32_t func_code, msg_len;
+        if (!read_func_code_and_length(client_socket, func_code, msg_len)) {
+            break;
+        }
+        const BackendAPIFunctionCode code = static_cast<BackendAPIFunctionCode>(func_code);
+        std::vector<char> buffer(msg_len);
+        if (read_n_bytes_from_socket(client_socket, buffer.data(), msg_len) != static_cast<ssize_t>(msg_len)) {
+            break;
+        }
+        switch (code) {
+            case PING: {
+                distributedcolony::PingRequest request;
+                if (request.ParseFromArray(buffer.data(), msg_len)) {
+                    print("Received PING from client_id: " + request.client_id());
+                    // Prepare and send PingResponse
+                    distributedcolony::PingResponse response;
+                    response.set_status(0);
+                    std::string out;
+                    response.SerializeToString(&out);
+                    write_func_code_and_length(client_socket, static_cast<uint32_t>(code), out.size());
+                    send(client_socket, out.data(), out.size(), 0);
+                } else {
+                    print("Failed to parse PingRequest");
+                }
+                break;
+            }
+            default:
+                print("Unknown function code: " + std::to_string(func_code));
+                break;
+        }
+    }
+}
+
 void accept_and_handle_connections(int server_fd) {
     int new_socket;
     struct sockaddr_in address;
@@ -48,12 +89,9 @@ void accept_and_handle_connections(int server_fd) {
             perror("accept");
             continue;
         }
-        char buffer[1024];
-        while (read(server_fd, buffer, sizeof(buffer)) > 0) {
-            // Discard the data (for now)
-        }
+        handle_client_requests(new_socket);
         close(new_socket);
-        std::cout << "[BE] Connection closed." << std::endl;
+        print("Connection closed.");
     }
 }
 
