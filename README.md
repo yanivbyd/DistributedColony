@@ -37,6 +37,5 @@ cd build/bin
 
 Or just run this command:
 ```
-./build.sh && build/bin/backend & build/bin/frontend
-pkill -f build/bin/backend # to kill the backend
+./build_and_run.sh
 ```

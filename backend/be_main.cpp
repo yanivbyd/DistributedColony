@@ -53,12 +53,13 @@ void accept_and_handle_connections(int server_fd) {
             // Discard the data (for now)
         }
         close(new_socket);
+        std::cout << "[BE] Connection closed." << std::endl;
     }
 }
 
 int main() {
     int server_fd = create_listening_socket(BE_API_PORT);
-    std::cout << "Backend listening on port " << BE_API_PORT << std::endl;
+    std::cout << "[BE] Backend listening on port " << BE_API_PORT << std::endl;
     accept_and_handle_connections(server_fd);
     close(server_fd);
     return 0;
