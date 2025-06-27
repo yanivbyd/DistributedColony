@@ -4,9 +4,12 @@
 #include <unistd.h>
 #include <cstring>
 #include "../be_api/be_api_common.h"
-#include "../build/be_api/ping.pb.h"
+#include "../build/be_api/colony.pb.h"
+#include "be_colony.h"
 
 using enum BackendAPIFunctionCode;
+using distributedcolony::InitColonyRequest;
+using distributedcolony::InitColonyResponse;
 
 void print(const std::string& msg) {
     std::cout << "[BE] " << msg << std::endl;
@@ -70,6 +73,23 @@ void handle_client_requests(const int client_socket) {
                     send(client_socket, out.data(), out.size(), 0);
                 } else {
                     print("Failed to parse PingRequest");
+                }
+                break;
+            }
+            case INIT_COLONY: {
+                InitColonyRequest request;
+                if (request.ParseFromArray(buffer.data(), msg_len)) {
+                    print("Received INIT_COLONY with width=" + std::to_string(request.width()) + ", height=" + std::to_string(request.height()));
+                    init_colony(request.width(), request.height());
+                    InitColonyResponse response;
+                    response.set_status(0);
+                    std::string out;
+                    response.SerializeToString(&out);
+                    write_func_code_and_length(client_socket, static_cast<uint32_t>(INIT_COLONY), out.size());
+                    send(client_socket, out.data(), out.size(), 0);
+                    print("Sent INIT_COLONY response");
+                } else {
+                    print("Failed to parse InitColonyRequest");
                 }
                 break;
             }

@@ -5,6 +5,8 @@ set -e
 pkill -f build/bin/backend || true
 pkill -f build/bin/frontend || true
 
+sleep 1
+
 echo -e "\033[1;35m================[ BUILD ] ================\033[0m"
 
 ./build.sh
@@ -13,6 +15,8 @@ echo -e "\033[1;35m================[ RUN ] --================\033[0m"
 
 # Run backend in the background
 build/bin/backend &
+
+sleep 1
 
 # Run frontend in the foreground
 build/bin/frontend 

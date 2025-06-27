@@ -4,12 +4,17 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "../be_api/be_api_common.h"
-#include "../build/be_api/ping.pb.h"
+#include "../build/be_api/colony.pb.h"
 #include <vector>
 #include <stdexcept>
 
+const int COLONY_WIDTH = 50;
+const int COLONY_HEIGHT = 50;
+
 using distributedcolony::PingRequest;
 using distributedcolony::PingResponse;
+using distributedcolony::InitColonyRequest;
+using distributedcolony::InitColonyResponse;
 
 void print(const std::string& msg) {
     std::cout << "[FO] " << msg << std::endl;
@@ -61,7 +66,38 @@ PingResponse receive_ping_response(int sock) {
     return response;
 }
 
-PingResponse ping_backend(int sock) {
+void init_colony(int sock, int width, int height) {
+    InitColonyRequest request;
+    request.set_width(width);
+    request.set_height(height);
+    std::string out;
+    request.SerializeToString(&out);
+    const uint32_t func_code = htonl(static_cast<uint32_t>(BackendAPIFunctionCode::INIT_COLONY));
+    const uint32_t msg_len = htonl(static_cast<uint32_t>(out.size()));
+    send(sock, &func_code, sizeof(func_code), 0);
+    send(sock, &msg_len, sizeof(msg_len), 0);
+    send(sock, out.data(), out.size(), 0);
+
+    // Receive response
+    uint32_t resp_func_code, resp_msg_len;
+    if (!read_func_code_and_length(sock, resp_func_code, resp_msg_len)) {
+        throw std::runtime_error("Failed to read InitColony response function code or length");
+    }
+    if (resp_func_code != static_cast<uint32_t>(BackendAPIFunctionCode::INIT_COLONY)) {
+        throw std::runtime_error("Unexpected function code in InitColony response");
+    }
+    std::vector<char> buffer(resp_msg_len);
+    if (read_n_bytes_from_socket(sock, buffer.data(), resp_msg_len) != static_cast<ssize_t>(resp_msg_len)) {
+        throw std::runtime_error("Failed to read InitColony response message");
+    }
+    InitColonyResponse response;
+    if (!response.ParseFromArray(buffer.data(), resp_msg_len)) {
+        throw std::runtime_error("Failed to parse InitColonyResponse");
+    }
+    print("InitColony response status = " + std::to_string(response.status()));
+}
+
+void ping_backend(int sock) {
     PingRequest request;
     request.set_client_id("frontend-1");
 
@@ -73,7 +109,8 @@ PingResponse ping_backend(int sock) {
     send(sock, &func_code, sizeof(func_code), 0);
     send(sock, &msg_len, sizeof(msg_len), 0);
     send(sock, out.data(), out.size(), 0);
-    return receive_ping_response(sock);
+    PingResponse response = receive_ping_response(sock);
+    print("PING Response = " + std::to_string(response.status()));
 }
 
 int main() {
@@ -81,8 +118,8 @@ int main() {
     if (sock < 0) {
         return 1;
     }
-    PingResponse response = ping_backend(sock);
-    print("PING Response = " + std::to_string(response.status()));
+    ping_backend(sock);
+    init_colony(sock, COLONY_WIDTH, COLONY_HEIGHT);
 
     print("Closing connection");
     close(sock);
