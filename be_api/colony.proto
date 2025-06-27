@@ -20,3 +20,18 @@ message InitColonyRequest {
 message InitColonyResponse {
     int32 status = 1;
 } 
+
+// GetImage
+message GetImageRequest {
+    int32 offsetX = 1;
+    int32 offsetY = 2;
+    int32 width = 3;
+    int32 height = 4;
+}
+
+message GetImageResponse {
+    int32 status = 1;    
+    int32 width = 2;
+    int32 height = 3;
+    bytes rgbBytes = 4; // row-major, 3 bytes per pixel (RGB)
+} 

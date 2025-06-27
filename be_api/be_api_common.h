@@ -12,7 +12,8 @@ constexpr int BE_API_PORT = 8082;
 // Shared function codes for API
 enum class BackendAPIFunctionCode : uint32_t {
     PING = 1,
-    INIT_COLONY = 2
+    INIT_COLONY = 2,
+    GET_IMAGE = 3
 };
 
 inline ssize_t read_n_bytes_from_socket(int fd, void* buf, size_t n) {

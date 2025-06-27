@@ -10,6 +10,8 @@
 using enum BackendAPIFunctionCode;
 using distributedcolony::InitColonyRequest;
 using distributedcolony::InitColonyResponse;
+using distributedcolony::GetImageRequest;
+using distributedcolony::GetImageResponse;
 
 void print(const std::string& msg) {
     std::cout << "[BE] " << msg << std::endl;
@@ -80,16 +82,29 @@ void handle_client_requests(const int client_socket) {
                 InitColonyRequest request;
                 if (request.ParseFromArray(buffer.data(), msg_len)) {
                     print("Received INIT_COLONY with width=" + std::to_string(request.width()) + ", height=" + std::to_string(request.height()));
-                    init_colony(request.width(), request.height());
+                    ColonyBackend::instance().init(request.width(), request.height());
                     InitColonyResponse response;
                     response.set_status(0);
                     std::string out;
                     response.SerializeToString(&out);
                     write_func_code_and_length(client_socket, static_cast<uint32_t>(INIT_COLONY), out.size());
                     send(client_socket, out.data(), out.size(), 0);
-                    print("Sent INIT_COLONY response");
                 } else {
                     print("Failed to parse InitColonyRequest");
+                }
+                break;
+            }
+            case GET_IMAGE: {
+                GetImageRequest request;
+                if (request.ParseFromArray(buffer.data(), msg_len)) {
+                    GetImageResponse response;
+                    ColonyBackend::instance().fill_image(response, request.offsetx(), request.offsety(), request.width(), request.height());
+                    std::string out;
+                    response.SerializeToString(&out);
+                    write_func_code_and_length(client_socket, static_cast<uint32_t>(GET_IMAGE), out.size());
+                    send(client_socket, out.data(), out.size(), 0);
+                } else {
+                    print("Failed to parse GetImageRequest");
                 }
                 break;
             }
