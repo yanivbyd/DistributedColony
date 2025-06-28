@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <sys/stat.h>
+#include "../shared/utils.h"
 
 const int COLONY_WIDTH = 500;
 const int COLONY_HEIGHT = 500;
@@ -229,7 +230,7 @@ int main() {
     }
     ping_backend(sock);
     init_colony(sock, COLONY_WIDTH, COLONY_HEIGHT);
-    blast(sock, 10, 10, 5);
+    blast(sock, Random::range(0, 200), Random::range(0, 200), Random::range(3, 60));
     get_image(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT);
     print("Closing connection");
     close(sock);

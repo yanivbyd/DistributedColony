@@ -15,7 +15,7 @@ struct Cell {
         return static_cast<uint8_t>((a + b) / 2);
     }
     
-    void update_color(const Cell& color, float factor = 1.0f) {
+    void update_color(const Cell& color, float factor) {
         red = average(red, static_cast<uint8_t>(color.red * factor));
         green = average(green, static_cast<uint8_t>(color.green * factor));
         blue = average(blue, static_cast<uint8_t>(color.blue * factor));

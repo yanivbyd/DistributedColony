@@ -81,7 +81,7 @@ void ColonyBackend::blast(int x, int y, int radius) {
     Cell color = pick_random_color();
     Cell *center = cell_at_pos(x, y);
     if (!center) return;
-    center->update_color(color);
+    center->update_color(color, 1);
     for (int dy = -radius; dy <= radius; ++dy) {
         for (int dx = -radius; dx <= radius; ++dx) {
             int nx = x + dx;
@@ -90,8 +90,8 @@ void ColonyBackend::blast(int x, int y, int radius) {
             if (!cell) continue;
             float dist = std::sqrt(dx*dx + dy*dy);
             if (dist == 0 || dist > radius) continue;
-            float factor = 1.0f / dist;
-            factor *= Random::range(0.5f, 1.5f);
+            const float adjusted_dist = dist * Random::range(0.998f, 1.002f);
+            const float factor = 1.0f - (adjusted_dist / radius) * 0.5f;
             cell->update_color(color, factor);
         }
     }
