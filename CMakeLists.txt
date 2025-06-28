@@ -43,17 +43,19 @@ add_custom_target(generate_proto ALL DEPENDS ${GENERATED_SRCS} ${GENERATED_HDRS}
 # ---------------------- Include Paths ----------------------
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/be_api)
+include_directories(${CMAKE_SOURCE_DIR}/shared)
 
 # ---------------------- Backend ----------------------
 file(GLOB_RECURSE BACKEND_SOURCES "${CMAKE_SOURCE_DIR}/backend/*.cpp")
+file(GLOB_RECURSE SHARED_SOURCES "${CMAKE_SOURCE_DIR}/shared/*.cpp")
 
-add_executable(backend ${BACKEND_SOURCES} ${GENERATED_SRCS})
+add_executable(backend ${BACKEND_SOURCES} ${SHARED_SOURCES} ${GENERATED_SRCS})
 add_dependencies(backend generate_proto)
 target_link_libraries(backend ${PROTOBUF_LIBRARIES})
 
 # ---------------------- Frontend ----------------------
 file(GLOB_RECURSE FRONTEND_SOURCES "${CMAKE_SOURCE_DIR}/frontend/*.cpp")
 
-add_executable(frontend ${FRONTEND_SOURCES} ${GENERATED_SRCS})
+add_executable(frontend ${FRONTEND_SOURCES} ${SHARED_SOURCES} ${GENERATED_SRCS})
 add_dependencies(frontend generate_proto)
 target_link_libraries(frontend ${PROTOBUF_LIBRARIES})

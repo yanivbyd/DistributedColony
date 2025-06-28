@@ -10,8 +10,8 @@
 #include <fstream>
 #include <sys/stat.h>
 
-const int COLONY_WIDTH = 50;
-const int COLONY_HEIGHT = 50;
+const int COLONY_WIDTH = 500;
+const int COLONY_HEIGHT = 500;
 
 using distributedcolony::PingRequest;
 using distributedcolony::PingResponse;
@@ -190,10 +190,11 @@ void get_image(int sock, int offsetX, int offsetY, int width, int height) {
     }
 }
 
-void blast(int sock, int x, int y) {
+void blast(int sock, int x, int y, int radius) {
     BlastRequest request;
     request.set_x(x);
     request.set_y(y);
+    request.set_radius(radius);
     std::string out;
     request.SerializeToString(&out);
     const uint32_t func_code = htonl(static_cast<uint32_t>(BackendAPIFunctionCode::BLAST));
@@ -228,7 +229,7 @@ int main() {
     }
     ping_backend(sock);
     init_colony(sock, COLONY_WIDTH, COLONY_HEIGHT);
-    blast(sock, 10, 10);
+    blast(sock, 10, 10, 5);
     get_image(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT);
     print("Closing connection");
     close(sock);

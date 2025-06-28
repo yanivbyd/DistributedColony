@@ -20,3 +20,5 @@ sleep 1
 
 # Run frontend in the foreground
 build/bin/frontend 
+
+open output/colony.bmp

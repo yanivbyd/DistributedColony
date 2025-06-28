@@ -40,6 +40,7 @@ message GetImageResponse {
 message BlastRequest {
     int32 x = 1;
     int32 y = 2;
+    int32 radius = 3;
 }
 
 message BlastResponse {

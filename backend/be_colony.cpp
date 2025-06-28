@@ -3,6 +3,8 @@
 #include <random>
 #include <vector>
 #include <stdexcept>
+#include <cmath>
+#include "../shared/utils.h"
 using distributedcolony::GetImageResponse;
 
 ColonyBackend& ColonyBackend::instance() {
@@ -11,38 +13,36 @@ ColonyBackend& ColonyBackend::instance() {
 }
 
 void ColonyBackend::init(int width, int height) {
-    if (matrix) {
-        delete[] matrix;
+    if (grid) {
+        delete[] grid;
     }
-    matrix_width = width;
-    matrix_height = height;
-    matrix = new Cell[width * height];
+    grid_width = width;
+    grid_height = height;
+    grid = new Cell[width * height];
     for (int i = 0; i < width * height; i++) {
         for (int x = 0; x < width; ++x) {
-            matrix[i].blue = 255;
-            matrix[i].red = 255;
-            matrix[i].green = 255;
+            grid[i].blue = 255;
+            grid[i].red = 255;
+            grid[i].green = 255;
         }
     }
-    Cell &cell = *get_random_cell(matrix);
+    Cell &cell = *get_random_cell(grid);
     cell.red = 255;
     cell.blue = 0;
     cell.green = 0;
 }
 
 Cell* ColonyBackend::get_random_cell(Cell* matrix) {
-    if (!matrix || matrix_width == 0 || matrix_height == 0) {
+    if (!matrix || grid_width == 0 || grid_height == 0) {
         throw std::runtime_error("get_random_cell: matrix is null or dimensions are zero");
     }
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, matrix_width * matrix_height - 1);
-    return &matrix[dis(gen)];
+    int index = Random::range(0, grid_width * grid_height - 1);
+    return &matrix[index];
 }
 
 void ColonyBackend::fill_image(GetImageResponse &response, int offsetX, int offsetY, int width, int height) {
-    if (!matrix || offsetX < 0 || offsetY < 0 || width <= 0 || height <= 0 ||
-        offsetX + width > matrix_width || offsetY + height > matrix_height) {
+    if (!grid || offsetX < 0 || offsetY < 0 || width <= 0 || height <= 0 ||
+        offsetX + width > grid_width || offsetY + height > grid_height) {
         response.set_status(1);
         return;
     }
@@ -53,8 +53,8 @@ void ColonyBackend::fill_image(GetImageResponse &response, int offsetX, int offs
     rgb.reserve(width * height * 3);
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            int idx = (offsetY + y) * matrix_width + (offsetX + x);
-            const Cell& cell = matrix[idx];
+            int idx = (offsetY + y) * grid_width + (offsetX + x);
+            const Cell& cell = grid[idx];
             rgb.push_back(cell.red);
             rgb.push_back(cell.green);
             rgb.push_back(cell.blue);
@@ -64,45 +64,35 @@ void ColonyBackend::fill_image(GetImageResponse &response, int offsetX, int offs
 }
 
 Cell ColonyBackend::pick_random_color() {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dist(0, 255);
     Cell c;
-    c.red = dist(gen);
-    c.green = dist(gen);
-    c.blue = dist(gen);
+    c.red = Random::range(0, 255);
+    c.green = Random::range(0, 255);
+    c.blue = Random::range(0, 255);
     c.extra = 0;
     return c;
 }
 
-int ColonyBackend::random_distance(int max_dist) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dist(1, max_dist);
-    return dist(gen);
-}
-
 Cell* ColonyBackend::cell_at_pos(int x, int y) {
-    if (x < 0 || y < 0 || x >= matrix_width || y >= matrix_height) return nullptr;
-    return &matrix[y * matrix_width + x];
+    if (x < 0 || y < 0 || x >= grid_width || y >= grid_height) return nullptr;
+    return &grid[y * grid_width + x];
 }
 
-void ColonyBackend::blast(int x, int y) {
+void ColonyBackend::blast(int x, int y, int radius) {
     Cell color = pick_random_color();
     Cell *center = cell_at_pos(x, y);
     if (!center) return;
-    center->apply_color(color);
-    int distance = random_distance(12); // distance is between 1 and 50
-    for (int dy = -distance; dy <= distance; ++dy) {
-        for (int dx = -distance; dx <= distance; ++dx) {
+    center->update_color(color);
+    for (int dy = -radius; dy <= radius; ++dy) {
+        for (int dx = -radius; dx <= radius; ++dx) {
             int nx = x + dx;
             int ny = y + dy;
             Cell *cell = cell_at_pos(nx, ny);
             if (!cell) continue;
             float dist = std::sqrt(dx*dx + dy*dy);
-            if (dist == 0 || dist > distance) continue;
+            if (dist == 0 || dist > radius) continue;
             float factor = 1.0f / dist;
-            cell->apply_color(color, factor);
+            factor *= Random::range(0.5f, 1.5f);
+            cell->update_color(color, factor);
         }
     }
 } 

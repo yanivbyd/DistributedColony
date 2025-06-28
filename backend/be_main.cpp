@@ -114,7 +114,7 @@ void handle_client_requests(const int client_socket) {
                 BlastRequest request;
                 if (request.ParseFromArray(buffer.data(), msg_len)) {
                     BlastResponse response;
-                    ColonyBackend::instance().blast(request.x(), request.y());
+                    ColonyBackend::instance().blast(request.x(), request.y(), request.radius());
                     response.set_status(0);
                     std::string out;
                     response.SerializeToString(&out);
