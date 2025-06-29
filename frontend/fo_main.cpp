@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include "../shared/utils.h"
+#include "../shared/image_saver.h"
 #include <string>
 
 const int COLONY_WIDTH = 500;
@@ -121,40 +122,6 @@ void ping_backend(int sock) {
     print("PING Response = " + std::to_string(response.status()));
 }
 
-void save_bmp(const std::string& filename, int width, int height, const std::string& rgb) {
-    // Ensure output directory exists
-    struct stat st = {0};
-    if (stat("output", &st) == -1) {
-        mkdir("output", 0755);
-    }
-    // Each row must be padded to a multiple of 4 bytes
-    int row_padded = (width * 3 + 3) & (~3);
-    int filesize = 54 + row_padded * height;
-    std::vector<unsigned char> bmpfile(filesize, 0);
-
-    // BMP Header
-    bmpfile[0] = 'B'; bmpfile[1] = 'M';
-    bmpfile[2] = filesize; bmpfile[3] = filesize >> 8; bmpfile[4] = filesize >> 16; bmpfile[5] = filesize >> 24;
-    bmpfile[10] = 54; // Pixel data offset
-    bmpfile[14] = 40; // DIB header size
-    bmpfile[18] = width; bmpfile[19] = width >> 8; bmpfile[20] = width >> 16; bmpfile[21] = width >> 24;
-    bmpfile[22] = height; bmpfile[23] = height >> 8; bmpfile[24] = height >> 16; bmpfile[25] = height >> 24;
-    bmpfile[26] = 1; bmpfile[28] = 24; // 1 plane, 24 bits per pixel
-
-    // Write pixel data (BMP is bottom-up, BGR)
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int src_idx = ((height - 1 - y) * width + x) * 3;
-            int dst_idx = 54 + y * row_padded + x * 3;
-            bmpfile[dst_idx + 0] = rgb[src_idx + 2]; // Blue
-            bmpfile[dst_idx + 1] = rgb[src_idx + 1]; // Green
-            bmpfile[dst_idx + 2] = rgb[src_idx + 0]; // Red
-        }
-    }
-    std::ofstream ofs(filename, std::ios::binary);
-    ofs.write(reinterpret_cast<const char*>(bmpfile.data()), bmpfile.size());
-}
-
 void get_image(int sock, int offsetX, int offsetY, int width, int height) {
     GetImageRequest request;
     request.set_offsetx(offsetX);
@@ -187,8 +154,14 @@ void get_image(int sock, int offsetX, int offsetY, int width, int height) {
     }
     print("GetImage response status = " + std::to_string(response.status()) + ", image size = " + std::to_string(response.rgbbytes().size()));
     if (response.status() == 0) {
-        save_bmp("output/colony.bmp", response.width(), response.height(), response.rgbbytes());
-        print("Saved image as output/colony.bmp");
+        // Convert string to vector<uint8_t>
+        std::vector<uint8_t> rgb_data(response.rgbbytes().begin(), response.rgbbytes().end());
+        
+        if (ImageSaver::save_png("output/colony.png", response.width(), response.height(), rgb_data)) {
+            print("Saved image as output/colony.png");
+        } else {
+            print("Failed to save PNG image");
+        }
     }
 }
 

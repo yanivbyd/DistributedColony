@@ -1,0 +1,1 @@
+pkill -f build/bin/backend || true

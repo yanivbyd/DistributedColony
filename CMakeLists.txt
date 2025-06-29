@@ -4,6 +4,11 @@ project(DistributedColony CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Suppress deprecation warnings for external libraries
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-Wno-deprecated-declarations)
+endif()
+
 # ---------------------- Protobuf Setup ----------------------
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
@@ -47,6 +52,7 @@ add_custom_target(generate_proto ALL DEPENDS ${GENERATED_SRCS} ${GENERATED_HDRS}
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/be_api)
 include_directories(${CMAKE_SOURCE_DIR}/shared)
+include_directories(${CMAKE_SOURCE_DIR}/shared/external)
 
 # ---------------------- Backend ----------------------
 file(GLOB_RECURSE BACKEND_SOURCES "${CMAKE_SOURCE_DIR}/backend/*.cpp")

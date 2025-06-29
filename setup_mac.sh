@@ -12,6 +12,10 @@ echo "Installing dependencies with Homebrew..."
 brew update
 brew install cmake protobuf abseil pkg-config
 
+# Download stb library
+echo "Downloading stb_image_write library..."
+./download_stb.sh
+
 # Configure and build the project
 echo "Configuring project with CMake..."
 cmake -Bbuild
