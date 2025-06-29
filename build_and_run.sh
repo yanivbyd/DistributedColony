@@ -7,6 +7,9 @@ pkill -f build/bin/frontend || true
 
 sleep 1
 
+rm -rf output/* 
+
+
 echo -e "\033[1;35m================[ BUILD ] ================\033[0m"
 
 ./build.sh

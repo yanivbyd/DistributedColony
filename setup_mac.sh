@@ -10,7 +10,7 @@ fi
 
 echo "Installing dependencies with Homebrew..."
 brew update
-brew install cmake protobuf abseil pkg-config
+brew install cmake protobuf abseil pkg-config ffmpeg
 
 # Download stb library
 echo "Downloading stb_image_write library..."

@@ -23,8 +23,8 @@ void BackgroundThread::start() {
 
 void BackgroundThread::thread_loop() {
     while (is_running) {
-        // Sleep for 1 second
-        sleep_for(std::chrono::seconds(1));
+        // Sleep for 200 milliseconds
+        sleep_for(std::chrono::milliseconds(200));
         
         // Get actual grid dimensions from ColonyBackend
         ColonyBackend& colony = ColonyBackend::instance();

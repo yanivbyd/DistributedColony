@@ -12,6 +12,8 @@
 #include "../shared/utils.h"
 #include "../shared/image_saver.h"
 #include <string>
+#include <thread>
+#include <chrono>
 
 const int COLONY_WIDTH = 500;
 const int COLONY_HEIGHT = 500;
@@ -201,18 +203,21 @@ struct CommandLineArgs {
     bool should_init_colony = true;
     bool should_exit = false;
     int exit_code = 0;
+    int video_frame_count = 0; // 0 means no video
 };
 
 void print_usage(const char* program_name) {
     std::cout << "Usage: " << program_name << " [options]" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  --init-colony [true|false]  Initialize a new colony (default: true)" << std::endl;
+    std::cout << "  --video <count>             Save a sequence of images and create a video" << std::endl;
     std::cout << "  --help                      Show this help message" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << program_name << "                    # Initialize new colony" << std::endl;
     std::cout << "  " << program_name << " --init-colony true  # Initialize new colony" << std::endl;
     std::cout << "  " << program_name << " --init-colony false # Skip initialization" << std::endl;
+    std::cout << "  " << program_name << " --video 5             # Save 5 images and create a video" << std::endl;
 }
 
 CommandLineArgs parse_arguments(int argc, char* argv[]) {
@@ -239,6 +244,19 @@ CommandLineArgs parse_arguments(int argc, char* argv[]) {
                 // No value provided, default to true
                 args.should_init_colony = true;
             }
+        } else if (arg == "--video") {
+            if (i + 1 < argc) {
+                args.video_frame_count = std::stoi(argv[++i]);
+                if (args.video_frame_count <= 0) {
+                    std::cout << "Invalid value for --video: must be > 0\n";
+                    args.should_exit = true;
+                    args.exit_code = 1;
+                }
+            } else {
+                std::cout << "Missing value for --video\n";
+                args.should_exit = true;
+                args.exit_code = 1;
+            }
         } else if (arg == "--help" || arg == "-h") {
             print_usage(argv[0]);
             args.should_exit = true;
@@ -252,6 +270,46 @@ CommandLineArgs parse_arguments(int argc, char* argv[]) {
     }
     
     return args;
+}
+
+void get_image_and_save(int sock, int offsetX, int offsetY, int width, int height, const std::string& filename) {
+    GetImageRequest request;
+    request.set_offsetx(offsetX);
+    request.set_offsety(offsetY);
+    request.set_width(width);
+    request.set_height(height);
+    std::string out;
+    request.SerializeToString(&out);
+    const uint32_t func_code = htonl(static_cast<uint32_t>(BackendAPIFunctionCode::GET_IMAGE));
+    const uint32_t msg_len = htonl(static_cast<uint32_t>(out.size()));
+    send(sock, &func_code, sizeof(func_code), 0);
+    send(sock, &msg_len, sizeof(msg_len), 0);
+    send(sock, out.data(), out.size(), 0);
+
+    // Receive response
+    uint32_t resp_func_code, resp_msg_len;
+    if (!read_func_code_and_length(sock, resp_func_code, resp_msg_len)) {
+        throw std::runtime_error("Failed to read GetImage response function code or length");
+    }
+    if (resp_func_code != static_cast<uint32_t>(BackendAPIFunctionCode::GET_IMAGE)) {
+        throw std::runtime_error("Unexpected function code in GetImage response");
+    }
+    std::vector<char> buffer(resp_msg_len);
+    if (read_n_bytes_from_socket(sock, buffer.data(), resp_msg_len) != static_cast<ssize_t>(resp_msg_len)) {
+        throw std::runtime_error("Failed to read GetImage response message");
+    }
+    GetImageResponse response;
+    if (!response.ParseFromArray(buffer.data(), resp_msg_len)) {
+        throw std::runtime_error("Failed to parse GetImageResponse");
+    }
+    if (response.status() == 0) {
+        std::vector<uint8_t> rgb_data(response.rgbbytes().begin(), response.rgbbytes().end());
+        if (ImageSaver::save_png(filename, response.width(), response.height(), rgb_data)) {
+            print("Saved image as " + filename);
+        } else {
+            print("Failed to save PNG image: " + filename);
+        }
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -276,7 +334,24 @@ int main(int argc, char* argv[]) {
         print("Skipping colony initialization (use --init-colony to create a new colony)");
     }
     
-    get_image(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT);
+    if (args.video_frame_count > 0) {
+        print("Saving video frames...");
+        char filename[256];
+        for (int i = 0; i < args.video_frame_count; ++i) {
+            snprintf(filename, sizeof(filename), "output/colony_%04d.png", i+1);
+            get_image_and_save(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT, filename);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        print("Creating video with ffmpeg...");
+        int ret = system("ffmpeg -y -framerate 1 -i output/colony_%04d.png -vf \"setpts=PTS/3\" -c:v libx264 -pix_fmt yuv420p output/colony_video.mp4");
+        if (ret == 0) {
+            print("Video created as output/colony_video.mp4");
+        } else {
+            print("Failed to create video with ffmpeg");
+        }
+    } else {
+        get_image_and_save(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT, "output/colony.png");
+    }
     print("Closing connection");
     close(sock);
     return 0;
