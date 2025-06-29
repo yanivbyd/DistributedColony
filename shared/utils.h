@@ -3,6 +3,7 @@
 
 #include <random>
 #include <cstdint>
+#include "../build/be_api/colony.pb.h"
 
 class Random {
 private:
@@ -46,6 +47,14 @@ public:
     template<typename T>
     static T choice(const T* array, int size) {
         return array[range(0, size - 1)];
+    }
+
+    static distributedcolony::Color random_color() {
+        distributedcolony::Color color;
+        color.set_red(range(0, 255));
+        color.set_green(range(0, 255));
+        color.set_blue(range(0, 255));
+        return color;
     }
 };
 

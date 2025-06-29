@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "../build/be_api/colony.pb.h"
 using distributedcolony::GetImageResponse;
+using distributedcolony::Color;
 
 struct Cell {
     uint8_t red;
@@ -25,7 +26,7 @@ struct Cell {
 class ColonyBackend {
 public:    
     void init(int width, int height);
-    void blast(int x, int y, int radius);
+    void blast(int x, int y, int radius, Color color);
     void fill_image(GetImageResponse &response, int offsetX, int offsetY, int width, int height);
     
     // Get grid dimensions
@@ -41,7 +42,6 @@ private:
 
     ColonyBackend() = default;
     Cell* get_random_cell(Cell* matrix);
-    Cell pick_random_color();
     Cell* cell_at_pos(int x, int y);
 };
 

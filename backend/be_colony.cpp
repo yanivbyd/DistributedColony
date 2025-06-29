@@ -63,25 +63,20 @@ void ColonyBackend::fill_image(GetImageResponse &response, int offsetX, int offs
     response.set_rgbbytes(reinterpret_cast<const char*>(rgb.data()), rgb.size());
 }
 
-Cell ColonyBackend::pick_random_color() {
-    Cell c;
-    c.red = Random::range(0, 255);
-    c.green = Random::range(0, 255);
-    c.blue = Random::range(0, 255);
-    c.extra = 0;
-    return c;
-}
-
 Cell* ColonyBackend::cell_at_pos(int x, int y) {
     if (x < 0 || y < 0 || x >= grid_width || y >= grid_height) return nullptr;
     return &grid[y * grid_width + x];
 }
 
-void ColonyBackend::blast(int x, int y, int radius) {
-    Cell color = pick_random_color();
+void ColonyBackend::blast(int x, int y, int radius, Color color) {
+    Cell blast_color;
+    blast_color.red = static_cast<uint8_t>(color.red());
+    blast_color.green = static_cast<uint8_t>(color.green());
+    blast_color.blue = static_cast<uint8_t>(color.blue());
+    blast_color.extra = 0;
     Cell *center = cell_at_pos(x, y);
     if (!center) return;
-    center->update_color(color, 1);
+    center->update_color(blast_color, 1);
     for (int dy = -radius; dy <= radius; ++dy) {
         for (int dx = -radius; dx <= radius; ++dx) {
             int nx = x + dx;
@@ -92,7 +87,7 @@ void ColonyBackend::blast(int x, int y, int radius) {
             if (dist == 0 || dist > radius) continue;
             const float adjusted_dist = dist * Random::range(0.998f, 1.002f);
             const float factor = 1.0f - (adjusted_dist / radius) * 0.5f;
-            cell->update_color(color, factor);
+            cell->update_color(blast_color, factor);
         }
     }
 } 

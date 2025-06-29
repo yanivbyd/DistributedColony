@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iostream>
 using std::this_thread::sleep_for;
+using distributedcolony::Color;
 
 BackgroundThread::BackgroundThread() {
     is_running = false;
@@ -29,11 +30,11 @@ void BackgroundThread::thread_loop() {
         // Get actual grid dimensions from ColonyBackend
         ColonyBackend& colony = ColonyBackend::instance();
         
-        // Generate random coordinates and radius
+        // Generate random coordinates, radius, and color
         const int x = Random::range(0, colony.get_width() - 1);
         const int y = Random::range(0, colony.get_height() - 1);
-        const int radius = Random::range(3, 30);
-        
-        colony.blast(x, y, radius);
+        const int radius = Random::range(3, 30);        
+        Color color = Random::random_color();
+        colony.blast(x, y, radius, color);
     }
 } 

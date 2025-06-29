@@ -36,11 +36,19 @@ message GetImageResponse {
     bytes rgbBytes = 4; // row-major, 3 bytes per pixel (RGB)
 } 
 
+// Color message
+message Color {
+    int32 red = 1;
+    int32 green = 2;
+    int32 blue = 3;
+}
+
 // Blast
 message BlastRequest {
     int32 x = 1;
     int32 y = 2;
     int32 radius = 3;
+    Color color = 4;
 }
 
 message BlastResponse {

@@ -2,11 +2,11 @@ Tasks to add to the app:
 
 * Shard the grid into 4 parts, still a single backend but handling multiple shards. 
    Each call should be for a specific shards
-* Backend replication - each shard has primary BE and replicas backends (for now allow misalignment on race condition)
+* Backend replication 
+  * Each shard has primary BE and replicas backends (for now allow misalignment on race condition)
 * Blast should allow BE-to-BE comminucation, to continue in other shards
 * Handle all race conditions
 * Persistency - full support for take down and start up
 * Backend failure - all should continue as normal
 * Background thread "cleaning up the mess"
 * Background thread with "moving" blast
-* In the front-end create multiple PNG images, and generate a video from them

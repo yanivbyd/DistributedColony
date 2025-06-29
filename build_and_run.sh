@@ -23,5 +23,5 @@ sleep 1
 
 # Run frontend in the foreground
 build/bin/frontend 
-
-open output/colony.png
+sleep 5
+./colony_video.sh
