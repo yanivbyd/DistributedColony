@@ -8,6 +8,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 
+# Find threads package
+find_package(Threads REQUIRED)
+
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 link_directories(${PROTOBUF_LIBRARY_DIRS})
 
@@ -51,7 +54,7 @@ file(GLOB_RECURSE SHARED_SOURCES "${CMAKE_SOURCE_DIR}/shared/*.cpp")
 
 add_executable(backend ${BACKEND_SOURCES} ${SHARED_SOURCES} ${GENERATED_SRCS})
 add_dependencies(backend generate_proto)
-target_link_libraries(backend ${PROTOBUF_LIBRARIES})
+target_link_libraries(backend ${PROTOBUF_LIBRARIES} Threads::Threads)
 
 # ---------------------- Frontend ----------------------
 file(GLOB_RECURSE FRONTEND_SOURCES "${CMAKE_SOURCE_DIR}/frontend/*.cpp")

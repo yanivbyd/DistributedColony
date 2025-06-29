@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include "../shared/utils.h"
+#include <string>
 
 const int COLONY_WIDTH = 500;
 const int COLONY_HEIGHT = 500;
@@ -223,14 +224,85 @@ void blast(int sock, int x, int y, int radius) {
     print("Blast response status = " + std::to_string(response.status()));
 }
 
-int main() {
+struct CommandLineArgs {
+    bool should_init_colony = true;
+    bool should_exit = false;
+    int exit_code = 0;
+};
+
+void print_usage(const char* program_name) {
+    std::cout << "Usage: " << program_name << " [options]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "  --init-colony [true|false]  Initialize a new colony (default: true)" << std::endl;
+    std::cout << "  --help                      Show this help message" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Examples:" << std::endl;
+    std::cout << "  " << program_name << "                    # Initialize new colony" << std::endl;
+    std::cout << "  " << program_name << " --init-colony true  # Initialize new colony" << std::endl;
+    std::cout << "  " << program_name << " --init-colony false # Skip initialization" << std::endl;
+}
+
+CommandLineArgs parse_arguments(int argc, char* argv[]) {
+    CommandLineArgs args;
+    
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--init-colony") {
+            // Check if next argument is a value
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                std::string value = argv[i + 1];
+                if (value == "true" || value == "1") {
+                    args.should_init_colony = true;
+                } else if (value == "false" || value == "0") {
+                    args.should_init_colony = false;
+                } else {
+                    std::cout << "Invalid value for --init-colony: " << value << std::endl;
+                    print_usage(argv[0]);
+                    args.should_exit = true;
+                    args.exit_code = 1;
+                }
+                i++; // Skip the value argument
+            } else {
+                // No value provided, default to true
+                args.should_init_colony = true;
+            }
+        } else if (arg == "--help" || arg == "-h") {
+            print_usage(argv[0]);
+            args.should_exit = true;
+            args.exit_code = 0;
+        } else {
+            std::cout << "Unknown argument: " << arg << std::endl;
+            print_usage(argv[0]);
+            args.should_exit = true;
+            args.exit_code = 1;
+        }
+    }
+    
+    return args;
+}
+
+int main(int argc, char* argv[]) {
+    CommandLineArgs args = parse_arguments(argc, argv);
+    
+    if (args.should_exit) {
+        return args.exit_code;
+    }
+    
     const int sock = create_and_connect_socket("127.0.0.1", BE_API_PORT);
     if (sock < 0) {
         return 1;
     }
+    
     ping_backend(sock);
-    init_colony(sock, COLONY_WIDTH, COLONY_HEIGHT);
-    blast(sock, Random::range(0, 200), Random::range(0, 200), Random::range(3, 60));
+    
+    if (args.should_init_colony) {
+        print("Initializing new colony with dimensions " + std::to_string(COLONY_WIDTH) + "x" + std::to_string(COLONY_HEIGHT));
+        init_colony(sock, COLONY_WIDTH, COLONY_HEIGHT);
+        blast(sock, Random::range(0, 200), Random::range(0, 200), Random::range(3, 60));
+    } else {
+        print("Skipping colony initialization (use --init-colony to create a new colony)");
+    }
+    
     get_image(sock, 0, 0, COLONY_WIDTH, COLONY_HEIGHT);
     print("Closing connection");
     close(sock);

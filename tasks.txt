@@ -1,0 +1,14 @@
+Tasks to add to the app:
+
+1. Create a background thread in the backend to create a random blast every 1 second
+2. Create a PNG instead of BMP - for now do it in the front-end
+3. Shard the grid into 4 parts, still a single backend but handling multiple shards. 
+   Each call should be for a specific shards
+4. Backend replication - each shard has primary BE and replicas backends (for now allow misalignment on race condition)
+5. Blast should allow BE-to-BE comminucation, to continue in other shards
+6. Handle all race conditions
+7. Persistency - full support for take down and start up
+8. Backend failure - all should continue as normal
+9. Background thread "cleaning up the mess"
+10. Background thread with "moving" blast
+11. In the front-end create multiple PNG images, and generate a video from them

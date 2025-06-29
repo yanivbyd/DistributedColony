@@ -27,6 +27,10 @@ public:
     void init(int width, int height);
     void blast(int x, int y, int radius);
     void fill_image(GetImageResponse &response, int offsetX, int offsetY, int width, int height);
+    
+    // Get grid dimensions
+    int get_width() const { return grid_width; }
+    int get_height() const { return grid_height; }
 
     static ColonyBackend& instance();
 

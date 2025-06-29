@@ -6,6 +6,7 @@
 #include "../be_api/be_api_common.h"
 #include "../build/be_api/colony.pb.h"
 #include "be_colony.h"
+#include "be_background_thread.h"
 
 using enum BackendAPIFunctionCode;
 using distributedcolony::InitColonyRequest;
@@ -150,7 +151,12 @@ void accept_and_handle_connections(int server_fd) {
 int main() {
     int server_fd = create_listening_socket(BE_API_PORT);
     std::cout << "[BE] Backend listening on port " << BE_API_PORT << std::endl;
+    
+    BackgroundThread background_thread;
+    background_thread.start();
+    
     accept_and_handle_connections(server_fd);
+    
     close(server_fd);
     return 0;
 } 
